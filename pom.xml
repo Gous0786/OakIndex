@@ -18,17 +18,14 @@
   <name>OakIndex</name>
   <description>PageIndex-powered RAG API (Spring Boot)</description>
   <properties>
-    <java.version>21</java.version>
-    <maven.compiler.release>21</maven.compiler.release>
+    <java.version>17</java.version>
+    <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-    <!-- libs -->
     <aws.sdk.v2.version>2.25.64</aws.sdk.v2.version>
     <wiremock.version>3.5.2</wiremock.version>
     <testcontainers.version>1.20.2</testcontainers.version>
   </properties>
-
   <dependencies>
     <!-- Web (MVC) -->
     <dependency>
