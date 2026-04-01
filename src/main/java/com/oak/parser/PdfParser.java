@@ -17,20 +17,21 @@ public final class PdfParser {
   private static final float LINE_Y_TOLERANCE = 2.5f;     // points
   private static final float COLUMN_GAP_MIN = 35.0f;      // points
   private static final int HEADER_FOOTER_MIN_PAGES = 3;   // repeated lines threshold
-  private static final float HEADER_ZONE_Y = 80.0f;       // near top
-  private static final float FOOTER_ZONE_Y = 740.0f;      // near bottom (depends on page size)
+  private static final float HEADER_ZONE_MARGIN = 52.0f;  // distance from page top
+  private static final float FOOTER_ZONE_MARGIN = 52.0f;  // distance from page bottom
   private static final Pattern HEADING_NUMBERING =
       Pattern.compile("^\\s*(\\d+(\\.\\d+)*|[IVX]+|[A-Z])([\\.)])\\s+.*");
 
   public ParsedDocument parse(InputStream pdf) throws Exception {
-    List<Span> spans = extractor.extract(pdf);
+    Map<Integer, Float> pageHeights = new HashMap<>();
+    List<Span> spans = extractor.extract(pdf, pageHeights);
     int pageCount = spans.stream().mapToInt(Span::page).max().orElse(0);
 
     // 1) spans -> lines
     List<Line> lines = buildLines(spans);
 
     // 2) remove repeated header/footer lines
-    Set<String> repeated = findRepeatedHeaderFooter(lines, pageCount);
+    Set<String> repeated = findRepeatedHeaderFooter(lines, pageCount, pageHeights);
     lines = lines.stream()
         .filter(l -> !repeated.contains(normalizeLineKey(l.text())))
         .collect(Collectors.toList());
@@ -47,7 +48,11 @@ public final class PdfParser {
       pageLines = reorderReadingOrder(pageLines);
 
       List<Block> blocks = buildBlocks(pageLines);
-      pages.add(new ParsedPage(p, blocks));
+      String pageText = blocks.stream()
+          .map(Block::text)
+          .filter(text -> text != null && !text.isBlank())
+          .collect(Collectors.joining("\n"));
+      pages.add(new ParsedPage(p, pageText, blocks));
     }
 
     return new ParsedDocument(pageCount, pages);
@@ -121,12 +126,13 @@ public final class PdfParser {
     return out;
   }
 
-  private Set<String> findRepeatedHeaderFooter(List<Line> lines, int pageCount) {
+  private Set<String> findRepeatedHeaderFooter(List<Line> lines, int pageCount, Map<Integer, Float> pageHeights) {
     // Repeated normalized line keys appearing on many pages in header/footer zones
     Map<String, Set<Integer>> keyPages = new HashMap<>();
 
     for (Line l : lines) {
-      boolean inHeaderFooterZone = (l.y() <= HEADER_ZONE_Y) || (l.y() >= FOOTER_ZONE_Y);
+      float pageHeight = pageHeights.getOrDefault(l.page(), 792.0f);
+      boolean inHeaderFooterZone = (l.y() <= HEADER_ZONE_MARGIN) || (l.y() >= (pageHeight - FOOTER_ZONE_MARGIN));
       if (!inHeaderFooterZone) continue;
 
       String key = normalizeLineKey(l.text());
