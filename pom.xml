@@ -32,6 +32,12 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
+<!-- PDFBox -->
+    <dependency>
+  <groupId>org.apache.pdfbox</groupId>
+  <artifactId>pdfbox</artifactId>
+  <version>2.0.31</version>
+</dependency>
 
     <!-- WebClient for calling PageIndex endpoints -->
     <dependency>
