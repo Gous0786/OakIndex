@@ -99,10 +99,15 @@ public final class PdfParser {
         for (Span s : lineSpans) {
           String t = s.text();
 
-          // Insert space if there is a noticeable gap
+          // Insert spaces with a font-relative threshold to better handle kerning/tracking PDFs.
           if (prev != null) {
             float gap = s.x() - (prev.x() + prev.w());
-            if (gap > 2.5f) sb.append(' ');
+            float spaceThreshold = Math.max(1.5f, s.fontSize() * 0.20f);
+            boolean startsAlphaNum = !t.isEmpty() && Character.isLetterOrDigit(t.charAt(0));
+            boolean prevHasTrailingSpace = !prev.text().isEmpty() && prev.text().endsWith(" ");
+            if (gap > spaceThreshold || (gap > 0.5f && !prevHasTrailingSpace && startsAlphaNum)) {
+              sb.append(' ');
+            }
           }
 
           sb.append(t);
